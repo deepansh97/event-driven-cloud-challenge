@@ -1,4 +1,4 @@
-name: CI
+name: CICD
 #trigger actions when code is pushed
 on:
   push:
