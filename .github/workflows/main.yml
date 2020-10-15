@@ -16,6 +16,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
       - name: Package CloudFormation Stack
-        run: aws cloudformation package --template-file template.yaml --s3-bucket aws-etl-lambda-code --output-template-file template.packaged.yaml
+        run: aws cloudformation package --template-file template.yml --s3-bucket my-acg-code --output-template-file template.packaged.yaml
       - name: Deploy CloudFormation Stack
-        run: aws cloudformation deploy --template-file template.packaged.yaml --stack-name ETL --capabilities CAPABILITY_IAM --parameter-overrides DBUsername=${{ secrets.DBUsername }} DBPassword=${{ secrets.DBPassword }}
+        run: aws cloudformation deploy --template-file template.packaged.yaml --stack-name ETL --capabilities CAPABILITY_IAM --parameter-overrides DBUsername=${{ secrets.DBUsername }} DBPassword=${{ secrets.DBPassword }}  aws-region=us-east-1 
