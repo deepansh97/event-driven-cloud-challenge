@@ -97,5 +97,5 @@ def lambda_function(event, context):
     #Count number of rows added
     recordCount = str(len(fdata.index))
     print("Number of records inserted in the table = " +recordCount)
-    send_notification("ETL job has completed. Number of records inserted in the table = "+recordCount)
+    send_notification("ETL job has completed successfully. Number of records inserted in the table = "+recordCount)
 
