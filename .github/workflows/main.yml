@@ -1,4 +1,4 @@
-name: CICD
+name: ETL-CICD
 #trigger actions when code is pushed
 on:
   push:
