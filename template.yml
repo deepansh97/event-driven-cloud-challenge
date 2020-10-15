@@ -1,0 +1,209 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  DBName:
+    Default: postgres
+    Description: My database
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: Must begin with a letter and contain only alphanumeric characters.
+  DBUsername:
+    NoEcho: 'true'
+    Description: Username for MySQL database access
+    Type: String
+    MinLength: '1'
+    MaxLength: '16'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+  DBPassword:
+    NoEcho: 'true'
+    Description: Password MySQL database access
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: must contain only alphanumeric characters.
+Resources:
+  lambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: allowVPC
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'logs:*'
+                Resource: '*'
+              - Effect: Allow
+                Action: 'sns:''Publish'''
+                Resource: '*'
+        - PolicyName: allowS3
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:PutObject'
+                Resource: 'arn:aws:s3:::my-acg-code'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 2f593946-5a38-4150-9784-85f91486d801
+  etlSNS:
+    Type: 'AWS::SNS::Topic'
+    Properties:
+      TopicName: etl
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 53c57853-14a3-4762-99f2-5bc99c919602
+  etlSubs:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: deepanshkulshrestha2010@gmail.com
+      Protocol: email
+      TopicArn: !Ref etlSNS
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 49b7ffb0-b9ce-4196-8300-bfdb5da58ddf
+  PostgresSecurityGroup:
+    Type: 'AWS::RDS::DBSecurityGroup'
+    Properties:
+      DBSecurityGroupIngress:
+        CIDRIP: 0.0.0.0/0
+      GroupDescription: SG for RDS
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: de9a9796-b026-4fe6-8530-11bebc2bcf10
+  PostgresDB:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      AllocatedStorage: 20
+      BackupRetentionPeriod: 0
+      DBName: !Ref DBName
+      DBInstanceClass: db.t2.micro
+      DBSecurityGroups:
+        - !Ref PostgresSecurityGroup
+      Engine: postgres
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      MaxAllocatedStorage: 20
+      MultiAZ: false
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 01420b9e-e1be-45f2-9233-a1bd1374bb6c
+  ETL:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Runtime: python3.8
+      Role: !GetAtt lambdaRole.Arn
+      Handler: test2.lambda_handler
+      MemorySize: 512
+      Timeout: 5
+      Code:
+        S3Bucket: my-acg-code
+        S3Key: AWS-challenge.zip
+      Environment:
+        Variables:
+          database: !Ref DBName
+          endpoint: !GetAtt PostgresDB.Endpoint.Address
+          password: !Ref DBPassword
+          port: !GetAtt PostgresDB.Endpoint.Port
+          region: us-east-1
+          sns: !Ref etlSNS
+          user: !Ref DBUsername
+      Layers:
+        - 'arn:aws:lambda:us-east-1:349612088049:layer:pandas:7'
+        - 'arn:aws:lambda:us-east-1:349612088049:layer:psycopg2:4'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: b4bffa82-3b3a-42a2-a2b3-5bca3a61d584
+  etlRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+        ScheduleExpression: "cron(0 1 * * ? *)"
+        State: "ENABLED"
+        Targets:
+            - Arn: !GetAtt ETL.Arn
+              Id: "ETLFunction"
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 17182dc7-8a6d-4328-867e-b1a633329e56
+Metadata:
+  'AWS::CloudFormation::Designer':
+    2f593946-5a38-4150-9784-85f91486d801:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: -200
+        'y': -140
+      z: 1
+      embeds: []
+    53c57853-14a3-4762-99f2-5bc99c919602:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: -28.540201822916668
+        'y': -104.673828125
+      z: 0
+      embeds: []
+    49b7ffb0-b9ce-4196-8300-bfdb5da58ddf:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 88.79313151041667
+        'y': -59.340494791666664
+      z: 0
+      embeds: []
+      isassociatedwith:
+        - 53c57853-14a3-4762-99f2-5bc99c919602
+    de9a9796-b026-4fe6-8530-11bebc2bcf10:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: -275.2068684895833
+        'y': -36.673828125
+      z: 0
+      embeds: []
+    01420b9e-e1be-45f2-9233-a1bd1374bb6c:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: -152.54020182291666
+        'y': -18.007161458333332
+      z: 0
+      embeds: []
+      isassociatedwith:
+        - de9a9796-b026-4fe6-8530-11bebc2bcf10
+    b4bffa82-3b3a-42a2-a2b3-5bca3a61d584:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 208.79313151041666
+        'y': -34.007161458333336
+      z: 0
+      embeds: []
+    17182dc7-8a6d-4328-867e-b1a633329e56:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: -337.2960897699308
+        'y': -110.16441189724206
+      z: 0
