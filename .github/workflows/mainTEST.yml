@@ -4,22 +4,17 @@ name: Super-Linter
 on: push
 
 jobs:
-  # Set the job key. The key is displayed as the job name
-  # when a job name is not provided
-  super-lint:
-    # Name the Job
-    name: Lint code base
-    # Set the type of machine to run on
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      # Checks out a copy of your repository on the ubuntu-latest machine
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      # Runs the Super-Linter action
-      - name: Run Super-Linter
-        uses: github/super-linter@v3
-        env:
-          DEFAULT_BRANCH: main
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Package CloudFormation Stack
+        run: aws cloudformation package --template-file template.yml --s3-bucket my-acg-code --output-template-file template.packaged.yaml
+      - name: Deploy CloudFormation Stack
+        run: aws cloudformation deploy --template-file template.packaged.yaml --stack-name ETL --capabilities CAPABILITY_IAM --parameter-overrides DBUsername=${{ secrets.DBUsername }} DBPassword=${{ secrets.DBPassword }}  aws-region=us-east-1 
