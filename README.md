@@ -1,7 +1,7 @@
 # event-driven-cloud-challenge
 
 Overview:
-The main task of this challenge is to automate an AWS pipeline by using Python and AWS cloud services, more details on the same can be found here .
+The main task of this challenge is to automate an ETL pipeline by using Python and AWS cloud services, more details on the same can be found here .
 
 Steps which leads to problem solving:
 1. ETL JOB : Created a CloudWatch event rule to trigger a Lambda function once in a day to perform the data transformation and load the data to PostgreSQL RDS database.
